@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interest Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f3f7fb;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 40px auto;
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        gap: 30px;
+      }
+      .calculator {
+        flex: 1;
+      }
+      .results {
+        flex: 1;
+        text-align: center;
+      }
+      h2 {
+        color: #111827;
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      label {
+        font-weight: 500;
+        display: block;
+        margin-top: 15px;
+        margin-bottom: 5px;
+      }
+      input[type='number'],
+      select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+      }
+      input[type='range'] {
+        width: 100%;
+        accent-color: #2563eb;
+      }
+      button {
+        margin-top: 20px;
+        width: 100%;
+        background-color: #2563eb;
+        color: white;
+        padding: 12px;
+        font-size: 16px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .result-box {
+        background: #f9fbfd;
+        padding: 10px 20px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 16px;
+        font-weight: 500;
+        color: #111827;
+      }
+      #chart-container {
+        width: 100%;
+        max-width: 320px;
+        margin: 20px auto 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="calculator">
+        <h2>Interest Calculator</h2>
+
+        <label for="type">Calculation Type</label>
+        <select id="type">
+          <option>Simple Interest</option>
+          <option>Compound Interest</option>
+        </select>
+
+        <label for="principal">Principal Amount (₹)</label>
+        <input type="number" id="principal" value="0" min="0" max="1000000" />
+        <input type="range" id="principalRange" value="0" min="0" max="1000000" />
+
+        <label for="rate">Annual Interest Rate (%)</label>
+        <input type="range" id="rate" value="1" min="1" max="100" />
+        <div style="text-align: right; font-size: 13px;"> <span id="rateLabel">1</span>%</div>
+
+        <label for="time">Time Period (Years)</label>
+        <input type="range" id="time" value="5" min="1" max="99" />
+        <div style="text-align: right; font-size: 13px;"><span id="timeLabel">5</span> years</div>
+
+        <button onclick="calculateInterest()">Calculate</button>
+      </div>
+
+      <div class="results">
+        <h2>Result Overview</h2>
+
+        <div class="result-box">
+          <span>Principal Amount:</span>
+          <span id="resultPrincipal">₹0.00</span>
+        </div>
+        <div class="result-box">
+          <span>Interest:</span>
+          <span id="resultInterest">₹0.00</span>
+        </div>
+        <div class="result-box">
+          <span>Total Amount:</span>
+          <span id="resultTotal">₹0.00</span>
+        </div>
+
+        <div id="chart-container">
+          <canvas id="myChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const principalInput = document.getElementById('principal');
+      const principalRange = document.getElementById('principalRange');
+      const rateRange = document.getElementById('rate');
+      const timeRange = document.getElementById('time');
+
+      const rateLabel = document.getElementById('rateLabel');
+      const timeLabel = document.getElementById('timeLabel');
+
+      let chart;
+
+      principalInput.addEventListener('input', () => {
+        principalRange.value = principalInput.value;
+      });
+
+      principalRange.addEventListener('input', () => {
+        principalInput.value = principalRange.value;
+      });
+
+      rateRange.addEventListener('input', () => {
+        rateLabel.textContent = rateRange.value;
+      });
+
+      timeRange.addEventListener('input', () => {
+        timeLabel.textContent = timeRange.value;
+      });
+
+      function calculateInterest() {
+        const type = document.getElementById('type').value;
+        const principal = parseFloat(principalInput.value);
+        const rate = parseFloat(rateRange.value);
+        const time = parseInt(timeRange.value);
+
+        let interest = 0;
+        if (type === 'Simple Interest') {
+          interest = (principal * rate * time) / 100;
+        } else {
+          interest = principal * Math.pow(1 + rate / 100, time) - principal;
+        }
+
+        const total = principal + interest;
+
+        document.getElementById('resultPrincipal').textContent = `₹${principal.toFixed(2)}`;
+        document.getElementById('resultInterest').textContent = `₹${interest.toFixed(2)}`;
+        document.getElementById('resultTotal').textContent = `₹${total.toFixed(2)}`;
+
+        renderChart(principal, interest);
+      }
+
+      function renderChart(principal, interest) {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Principal', 'Interest'],
+            datasets: [
+              {
+                data: [principal, interest],
+                backgroundColor: ['#60a5fa', '#facc15'],
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'bottom',
+              },
+            },
+          },
+        });
+      }
+
+      window.onload = calculateInterest;
+    </script>
+  </body>
+</html>
